@@ -2,7 +2,7 @@ import { Test } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { RegistrationService } from './registration.service';
-import { DocumentType, Registration, RegistrationStatus } from './entities/registration.entity';
+import { DocumentType, Registration, RegistrationStatus } from './registration.entity';
 import {
   ExpiredResumeTokenException,
   MfaNotValidatedException,

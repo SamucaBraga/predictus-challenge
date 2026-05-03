@@ -7,7 +7,7 @@ import {
   UpdateDateColumn,
   OneToMany,
 } from 'typeorm';
-import { MfaCode } from '../../mfa/entities/mfa-code.entity';
+import { MfaCode } from '../mfa/mfa-code.entity';
  
 export enum RegistrationStatus {
   IN_PROGRESS = 'in_progress',

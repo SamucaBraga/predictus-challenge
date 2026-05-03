@@ -1,8 +1,8 @@
 import {
   Column, CreateDateColumn, Entity, Index, ManyToOne, PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Registration } from '../../registration/entities/registration.entity';
-
+import { Registration } from '../registration/registration.entity';
+ 
 @Entity('mfa_codes')
 @Index('idx_mfa_codes_registration_active', ['registration', 'used_at', 'expires_at'])
 export class MfaCode {

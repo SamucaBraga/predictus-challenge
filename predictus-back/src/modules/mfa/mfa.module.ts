@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { MfaCode } from './entities/mfa-code.entity';
+import { MfaService } from './mfa.service';
+import { MfaCode } from './mfa-code.entity';
  
-
 @Module({
   imports: [
     TypeOrmModule.forFeature([MfaCode]),
   ],
-  providers: [],
-  exports: [],
+  providers: [MfaService],
+  exports: [MfaService],
 })
 export class MfaModule {}

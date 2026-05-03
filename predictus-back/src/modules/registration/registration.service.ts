@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Repository, LessThan, IsNull, Not } from 'typeorm';
 import { randomUUID } from 'node:crypto';
-import { Registration, RegistrationStatus, DocumentType } from './entities/registration.entity';
+import { Registration, RegistrationStatus, DocumentType } from './registration.entity';
 import { ExpiredResumeTokenException, IncompleteRegistrationDataException, InvalidResumeTokenException, MfaNotValidatedException, RegistrationAlreadyFinishedException, RegistrationNotFoundException, StepNotAllowedException } from '../../shared/exceptions/domain.exceptions';
 
 export interface UpsertIdentificationInput {
