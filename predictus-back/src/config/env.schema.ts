@@ -1,0 +1,19 @@
+import { z } from 'zod';
+
+export const envSchema = z.object({
+  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  PORT: z.coerce.number().default(3001),
+  DATABASE_URL: z.url(),
+  RESEND_API_KEY: z.string().min(1),
+  EMAIL_FROM: z.email(),
+  BASE_URL: z.url(),
+  ABANDONMENT_TIMEOUT_MINUTES: z.coerce.number().int().positive().default(5),
+  MFA_CODE_TTL_MINUTES: z.coerce.number().int().positive().default(10),
+  MFA_MAX_ATTEMPTS: z.coerce.number().int().positive().default(3),
+  RESUME_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(7),
+  THROTTLE_IDENTIFICATION_LIMIT: z.coerce.number().int().positive().default(5),
+  THROTTLE_MFA_RESEND_LIMIT: z.coerce.number().int().positive().default(3),
+  THROTTLE_MFA_VERIFY_LIMIT: z.coerce.number().int().positive().default(10),
+});
+
+export type Env = z.infer<typeof envSchema>;
