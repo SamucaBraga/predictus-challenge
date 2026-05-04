@@ -1,6 +1,6 @@
 import { registerDecorator, ValidationOptions } from 'class-validator';
-import { isValidCnpj } from '../cnpj.validator';
-
+import { isValidCnpj } from '../validators/cnpj.validator';
+ 
 export function IsCnpj(options?: ValidationOptions) {
   return (object: object, propertyName: string) => {
     registerDecorator({

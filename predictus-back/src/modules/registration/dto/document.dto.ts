@@ -1,7 +1,7 @@
 import { IsEnum, IsString, ValidateIf } from 'class-validator';
-import { IsCpf } from '../../../shared/validators/decorators/is-cpf.decorator';
-import { IsCnpj } from '../../../shared/validators/decorators/is-cnpj.decorator';
 import { DocumentType } from '../registration.entity';
+import { IsCpf } from '../../../shared/decorators/is-cpf.decorator';
+import { IsCnpj } from '../../../shared/decorators/is-cnpj.decorator';
  
 export class DocumentDto {
   @IsEnum(DocumentType)

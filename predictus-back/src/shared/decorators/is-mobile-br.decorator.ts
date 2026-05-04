@@ -1,5 +1,5 @@
 import { registerDecorator, ValidationOptions } from 'class-validator';
-import { isValidMobileBr } from '../mobile-br.validator';
+import { isValidMobileBr } from '../validators/mobile-br.validator';
 
 export function IsMobileBr(options?: ValidationOptions) {
   return (object: object, propertyName: string) => {
