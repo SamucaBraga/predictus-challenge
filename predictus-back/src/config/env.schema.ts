@@ -7,6 +7,7 @@ export const envSchema = z.object({
   RESEND_API_KEY: z.string().min(1),
   EMAIL_FROM: z.email(),
   BASE_URL: z.url(),
+  FRONTEND_ORIGIN: z.url(),
   ABANDONMENT_TIMEOUT_MINUTES: z.coerce.number().int().positive().default(5),
   MFA_CODE_TTL_MINUTES: z.coerce.number().int().positive().default(10),
   MFA_MAX_ATTEMPTS: z.coerce.number().int().positive().default(3),
