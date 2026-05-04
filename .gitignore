@@ -1,0 +1,5 @@
+predictus-front/node_modules/
+predictus-front/.next/
+predictus-front/next-env.d.ts
+predictus-front/tsconfig.tsbuildinfo
+predictus-front/.env*
