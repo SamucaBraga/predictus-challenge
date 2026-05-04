@@ -14,6 +14,7 @@ export const envSchema = z.object({
   THROTTLE_IDENTIFICATION_LIMIT: z.coerce.number().int().positive().default(5),
   THROTTLE_MFA_RESEND_LIMIT: z.coerce.number().int().positive().default(3),
   THROTTLE_MFA_VERIFY_LIMIT: z.coerce.number().int().positive().default(10),
+  VIACEP_BASE_URL: z.url(),
 });
 
 export type Env = z.infer<typeof envSchema>;
