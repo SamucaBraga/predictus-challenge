@@ -2,6 +2,7 @@
 
 import { HTTPError } from 'ky';
 import { redirect } from 'next/navigation';
+import { z } from 'zod';
 import { backendApi } from '@/lib/http/backend-api';
 import { type FormState, mapKyErrorToFormState } from '@/lib/http/form-state';
 import { logger } from '@/lib/logger';
@@ -13,7 +14,7 @@ import {
   verifyMfaSchema,
 } from '@/lib/schemas/registration';
 
-const SESSION_LOST_REDIRECT = '/cadastro/identificacao?error=expired_token';
+const SESSION_LOST_REDIRECT = '/signup/identification?error=expired_token';
 
 function isUnauthorized(error: unknown): boolean {
   return error instanceof HTTPError && error.response.status === 401;
@@ -28,7 +29,7 @@ export async function submitIdentification(
     return {
       success: false,
       message: null,
-      errors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
+      errors: z.flattenError(parsed.error).fieldErrors as Record<string, string[]>,
     };
   }
 
@@ -52,7 +53,7 @@ export async function verifyMfa(
     return {
       success: false,
       message: null,
-      errors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
+      errors: z.flattenError(parsed.error).fieldErrors as Record<string, string[]>,
     };
   }
 
@@ -88,7 +89,7 @@ export async function submitDocument(
     return {
       success: false,
       message: null,
-      errors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
+      errors: z.flattenError(parsed.error).fieldErrors as Record<string, string[]>,
     };
   }
 
@@ -113,7 +114,7 @@ export async function submitContact(
     return {
       success: false,
       message: null,
-      errors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
+      errors: z.flattenError(parsed.error).fieldErrors as Record<string, string[]>,
     };
   }
 
@@ -138,7 +139,7 @@ export async function submitAddress(
     return {
       success: false,
       message: null,
-      errors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
+      errors: z.flattenError(parsed.error).fieldErrors as Record<string, string[]>,
     };
   }
 
