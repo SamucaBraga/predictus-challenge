@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { validateEnv } from './config/configuration';
 import { DatabaseModule } from './infra/database/database.module';
+import { CepModule } from './modules/cep/cep.module';
 import { RegistrationModule } from './modules/registration/registration.module';
 
 @Module({
@@ -13,17 +14,11 @@ import { RegistrationModule } from './modules/registration/registration.module';
       isGlobal: true,
       validate: validateEnv,
     }),
-    ThrottlerModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => [
-        { name: 'identification', ttl: 60_000, limit: config.get<number>('THROTTLE_IDENTIFICATION_LIMIT')! },
-        { name: 'mfa-resend', ttl: 600_000, limit: config.get<number>('THROTTLE_MFA_RESEND_LIMIT')! },
-        { name: 'mfa-verify', ttl: 60_000, limit: config.get<number>('THROTTLE_MFA_VERIFY_LIMIT')! },
-      ],
-    }),
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 10 }]),
     ScheduleModule.forRoot(),
     DatabaseModule,
     RegistrationModule,
+    CepModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

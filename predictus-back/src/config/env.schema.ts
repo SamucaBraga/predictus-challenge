@@ -11,9 +11,6 @@ export const envSchema = z.object({
   MFA_CODE_TTL_MINUTES: z.coerce.number().int().positive().default(10),
   MFA_MAX_ATTEMPTS: z.coerce.number().int().positive().default(3),
   RESUME_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(7),
-  THROTTLE_IDENTIFICATION_LIMIT: z.coerce.number().int().positive().default(5),
-  THROTTLE_MFA_RESEND_LIMIT: z.coerce.number().int().positive().default(3),
-  THROTTLE_MFA_VERIFY_LIMIT: z.coerce.number().int().positive().default(10),
   VIACEP_BASE_URL: z.url(),
 });
 
