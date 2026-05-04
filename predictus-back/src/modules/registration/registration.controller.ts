@@ -9,9 +9,9 @@ import { VerifyMfaDto } from './dto/verify-mfa.dto';
 import { SessionGuard } from './guards/session.guard';
 import { CurrentRegistration } from './decorators/current-registration.decorator';
 import { RegistrationStatus, type Registration } from './registration.entity';
-import type { DocumentDto } from './dto/document.dto';
-import type { ContactDto } from './dto/contact.dto';
-import type { AddressDto } from './dto/address.dto';
+import { DocumentDto } from './dto/document.dto';
+import { ContactDto } from './dto/contact.dto';
+import { AddressDto } from './dto/address.dto';
 
 const COOKIE_NAME = 'registration_session';
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
