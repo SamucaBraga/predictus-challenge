@@ -1,5 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import { Body, Controller, Get, HttpCode, Post, Query, Res, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { type Response } from 'express';
 import { RegistrationService } from './registration.service';
 import { MfaService } from '../mfa/mfa.service';
@@ -31,6 +32,7 @@ export class RegistrationController {
     this.cookieSecure = config.get<string>('NODE_ENV') === 'production';
   }
 
+  @Throttle({ identification: {} })
   @Post('identification')
   @HttpCode(200)
   async identification(@Body() dto: IdentificationDto, @Res({ passthrough: true }) res: Response) {
@@ -41,6 +43,7 @@ export class RegistrationController {
     return { requiresMfa: true };
   }
 
+  @Throttle({ 'mfa-verify': {} })
   @UseGuards(SessionGuard)
   @Post('mfa/verify')
   @HttpCode(200)
@@ -50,6 +53,7 @@ export class RegistrationController {
     return { success: true };
   }
 
+  @Throttle({ 'mfa-resend': {} })
   @UseGuards(SessionGuard)
   @Post('mfa/resend')
   @HttpCode(200)
