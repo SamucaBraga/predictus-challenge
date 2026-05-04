@@ -147,6 +147,13 @@ export class RegistrationService {
     if (reg.status === RegistrationStatus.FINISHED) {
       throw new RegistrationAlreadyFinishedException();
     }
+    
+    // Submitting on an abandoned registration reactivates it.
+    // Caller will persist via repo.save(reg)
+    if (reg.status === RegistrationStatus.ABANDONED) {
+      reg.status = RegistrationStatus.IN_PROGRESS;
+      reg.recovery_email_sent_at = null;
+    }
     return reg;
   }
 

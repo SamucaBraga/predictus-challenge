@@ -23,10 +23,10 @@ export class AbandonmentDetectionService {
 
     const candidates = await this.repo.find({
       where: {
-        status: RegistrationStatus.IN_PROGRESS,
+        status: RegistrationStatus.IN_PROGRESS, 
         mfa_validated_at: Not(IsNull()),
         updated_at: LessThan(cutoff),
-        recovery_email_sent_at: IsNull(),
+        recovery_email_sent_at: IsNull(), //not include who have already received an email to avoid spamming
       },
     });
 

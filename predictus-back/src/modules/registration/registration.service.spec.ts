@@ -263,6 +263,26 @@ describe('RegistrationService.reactivateAbandoned', () => {
     expect(result).toBe(reg);
     expect(repo.save).not.toHaveBeenCalled();
   });
+
+  it('updateDocument em registration abandoned reativa para in_progress', async () => {
+    const reg = mockReg({
+      id: 'r1',
+      status: RegistrationStatus.ABANDONED,
+      recovery_email_sent_at: new Date(),
+      mfa_validated_at: new Date(),
+      current_step: 2,
+    });
+    repo.findOne.mockResolvedValue(reg);
+
+    const result = await service.updateDocument('r1', {
+      document_type: DocumentType.CPF,
+      document_number: '11144477735',
+    });
+
+    expect(result.status).toBe(RegistrationStatus.IN_PROGRESS);
+    expect(result.recovery_email_sent_at).toBeNull();
+    expect(result.current_step).toBe(3);
+  });
 });
 
 function mockReg(overrides: Partial<Registration>): Registration {
