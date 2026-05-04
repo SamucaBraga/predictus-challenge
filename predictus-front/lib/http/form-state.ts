@@ -14,17 +14,6 @@ export const INITIAL_STATE: FormState<unknown> = {
   data: undefined,
 };
 
-export function makeSuccess<T>(data?: T, message: string | null = null): FormState<T> {
-  return { success: true, message, errors: null, data };
-}
-
-export function makeFailure(
-  errors: Record<string, string[]>,
-  message: string | null = null,
-): FormState<never> {
-  return { success: false, message, errors, data: undefined };
-}
-
 const SLUG_TO_ERROR: Record<string, [field: string, message: string]> = {
   invalid_code: ['code', 'Código inválido.'],
   expired_code: ['code', 'Código expirado. Reenvie e tente de novo.'],
@@ -42,7 +31,7 @@ const SLUG_TO_ERROR: Record<string, [field: string, message: string]> = {
 
 export async function mapKyErrorToFormState(err: unknown): Promise<FormState<never>> {
   if (!(err instanceof HTTPError)) {
-    return makeFailure({ _form: ['Erro de rede. Tente novamente.'] });
+    return { success: false, message: null, errors: { _form: ['Erro de rede. Tente novamente.'] } };
   }
 
   const body = (await err.response.json().catch(() => ({}))) as {
@@ -51,13 +40,12 @@ export async function mapKyErrorToFormState(err: unknown): Promise<FormState<nev
   };
 
   const entry = body.error ? SLUG_TO_ERROR[body.error] : undefined;
-  if (!entry) return makeFailure({ _form: ['Erro inesperado.'] });
+  if (!entry) return { success: false, message: null, errors: { _form: ['Erro inesperado.'] } };
 
   const [field, baseMessage] = entry;
-  
   const message =
     body.error === 'invalid_code' && body.attemptsLeft != null
       ? `Código inválido. Tentativas restantes: ${body.attemptsLeft}`
       : baseMessage;
-  return makeFailure({ [field]: [message] });
+  return { success: false, message: null, errors: { [field]: [message] } };
 }
