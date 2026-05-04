@@ -1,98 +1,89 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Predictus Back
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+API do desafio Predictus — cadastro incremental multi-step com MFA por e-mail, detecção de abandono e retomada por link.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+> Spec completa: [`docs/superpowers/specs/2026-05-02-cadastro-incremental-design.md`](../docs/superpowers/specs/2026-05-02-cadastro-incremental-design.md).
 
-## Description
+## Stack
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- NestJS 11 + TypeORM + PostgreSQL 17
+- `class-validator` (DTOs) + `zod` (env)
+- `@nestjs/throttler` (rate limit) + `@nestjs/schedule` (cron)
+- Resend (e-mail) + ViaCEP (consulta de endereço)
+- Jest (unit + integração)
+- Biome (lint + format)
 
-## Project setup
+## Subindo o projeto
+
+Pré-requisitos: Node 20+, Docker, e uma API key da Resend (passo abaixo).
 
 ```bash
-$ npm install
+# 1. Banco
+docker compose up -d
+
+# 2. Dependências
+npm install
+
+# 3. Configurar env (ver seção abaixo)
+cp .env.example .env   # ou criar do zero
+
+# 4. Migrations
+npm run migration:run
+
+# 5. Servir
+npm run start:dev
 ```
 
-## Compile and run the project
+A API sobe em `http://localhost:3001`. Healthcheck em `GET /health`.
+
+## Variáveis de ambiente
+
+Todas validadas via `zod` em [`src/config/env.schema.ts`](src/config/env.schema.ts) — boot falha se algo estiver inválido.
+
+| Variável | Obrigatória | Default | Descrição |
+| --- | --- | --- | --- |
+| `NODE_ENV` | não | `development` | `development` \| `test` \| `production` |
+| `PORT` | não | `3001` | Porta do servidor |
+| `DATABASE_URL` | sim | — | URL do Postgres |
+| `RESEND_API_KEY` | sim | — | Chave da Resend (envio de e-mail) |
+| `EMAIL_FROM` | sim | — | Sender verificado na Resend (`onboarding@resend.dev` para testes) |
+| `BASE_URL` | sim | — | URL pública do **front** (usada em links de retomada nos e-mails) |
+| `FRONTEND_ORIGIN` | sim | — | Origin permitida pelo CORS |
+| `VIACEP_BASE_URL` | sim | — | Base URL do provider de CEP |
+| `ABANDONMENT_TIMEOUT_MINUTES` | não | `5` | Tempo sem update até marcar como abandonado |
+| `MFA_CODE_TTL_MINUTES` | não | `10` | Validade do código MFA |
+| `MFA_MAX_ATTEMPTS` | não | `3` | Tentativas erradas antes de invalidar o código |
+| `RESUME_TOKEN_TTL_DAYS` | não | `7` | Validade do token de retomada |
+
+### Resend — API key e sender
+
+1. Criar conta em [resend.com](https://resend.com), copiar API key (`re_...`) → `RESEND_API_KEY`.
+2. Para testes locais, usar `EMAIL_FROM=onboarding@resend.dev` (sender verificado da Resend que entrega para qualquer destinatário).
+
+## Testes
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm run test           
+npm run test:cov       
 ```
 
-## Run tests
+## Decisões arquiteturais
+
+- **Persistência incremental** — cada step submete um POST que atualiza colunas específicas em `registrations`. Não há tabela de "rascunho".
+- **Status** — `in_progress` (default) → `finished` (concluiu) ou `abandoned` (cron detecta inatividade). Submissão em registro `abandoned` reativa para `in_progress`.
+- **MFA bloqueante após step 1** — `SessionGuard` valida cookie + token; rotas de step exigem `mfa_validated_at` setado.
+- **Detecção de abandono via cron** — `@Cron(EVERY_MINUTE)` em [`abandonment-detection.service.ts`](src/modules/registration/abandonment-detection.service.ts). Coluna `recovery_email_sent_at` desduplica para evitar spam.
+- **Retomada por link** — cookie HttpOnly + token na URL como fallback. `GET /registration/resume?token=...` reativa, refaz o cookie e devolve `redirectTo` do step apropriado.
+- **Rate limit** — default global de 10 req/min/IP via `ThrottlerGuard`; overrides inline mais restritivos em `/identification` (5/min) e `/mfa/resend` (3/10min).
+- **Providers como interfaces** (`CEP_PROVIDER`, `EMAIL_PROVIDER`) — facilita troca/mocks em teste sem acoplar ao Resend ou ViaCEP.
+- **Exceções de domínio** — `src/shared/exceptions/domain.exceptions.ts` mapeiam erro de negócio direto pra HTTP code, sem tratar `BadRequestException` como categoria genérica.
+
+## Lint/format: Biome em vez de ESLint + Prettier
+
+O challenge sugere ESLint, mas o projeto usa [Biome](https://biomejs.dev) — substituto unificado dos dois, em Rust, ~10–25× mais rápido. A config vive em [`biome.jsonc`](biome.jsonc); é um único binário (`biome check`) cobrindo lint + format. A regra `useImportType` está desligada porque `import type` quebra a metadata de DI do Nest (decorators precisam da classe em runtime).
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npm run lint           # check
+npm run lint:fix       # check + autofix
+npm run format         # format only
 ```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).

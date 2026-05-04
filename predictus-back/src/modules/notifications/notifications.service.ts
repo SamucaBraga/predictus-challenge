@@ -19,7 +19,7 @@ export class NotificationsService {
 
   async sendRecoveryEmail(reg: Registration): Promise<void> {
     const baseUrl = this.config.get<string>('BASE_URL');
-    const url = `${baseUrl}/cadastro/retomar?token=${reg.resume_token}`;
+    const url = `${baseUrl}/signup/resume?token=${reg.resume_token}`;
     const tpl = recoveryTemplate(url);
     await this.email.send({ to: reg.email, ...tpl });
   }

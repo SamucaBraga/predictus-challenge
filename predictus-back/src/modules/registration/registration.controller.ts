@@ -1,5 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import { Body, Controller, Get, HttpCode, Post, Query, Res, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { type Response } from 'express';
 import { RegistrationService } from './registration.service';
 import { MfaService } from '../mfa/mfa.service';
@@ -31,6 +32,7 @@ export class RegistrationController {
     this.cookieSecure = config.get<string>('NODE_ENV') === 'production';
   }
 
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post('identification')
   @HttpCode(200)
   async identification(@Body() dto: IdentificationDto, @Res({ passthrough: true }) res: Response) {
@@ -50,6 +52,7 @@ export class RegistrationController {
     return { success: true };
   }
 
+  @Throttle({ default: { limit: 3, ttl: 600_000 } })
   @UseGuards(SessionGuard)
   @Post('mfa/resend')
   @HttpCode(200)
@@ -95,24 +98,22 @@ export class RegistrationController {
 
   @Get('resume')
   async resume(@Query('token') token: string, @Res({ passthrough: true }) res: Response) {
-    // SEM SessionGuard: este endpoint resolve o token via query (não cookie).
-    // findByResumeToken lança ExpiredResumeTokenException(410)/InvalidResumeTokenException(404)
-    // que o Route Handler do Next mapeia.
+    // SessionGuard is intentionally omitted here: this endpoint resolves the
+    // session via query token, not cookie. findByResumeToken throws
+    // ExpiredResumeTokenException(410) / InvalidResumeTokenException(404),
+    // which the Next Route Handler maps to UI-level redirects.
     const reg = await this.registration.findByResumeToken(token);
     if (reg.status === RegistrationStatus.FINISHED) {
-      return { redirectTo: '/cadastro/sucesso' };
+      return { redirectTo: '/signup/success' };
     }
     await this.registration.reactivateAbandoned(reg);
     this.setSessionCookie(res, reg.resume_token);
-    return { redirectTo: this.routeForStep(reg.current_step) };
-  }
 
-  private routeForStep(step: number): string {
-    const routes = [
-      '/cadastro/identificacao', '/cadastro/verificar', '/cadastro/documento',
-      '/cadastro/contato', '/cadastro/endereco', '/cadastro/revisao',
-    ];
-    return routes[Math.max(1, Math.min(step, routes.length - 1))];
+    if (reg.current_step <= 1) return { redirectTo: '/signup/verify' };
+    if (reg.current_step === 2) return { redirectTo: '/signup/document' };
+    if (reg.current_step === 3) return { redirectTo: '/signup/contact' };
+    if (reg.current_step === 4) return { redirectTo: '/signup/address' };
+    return { redirectTo: '/signup/review' };
   }
 
   private setSessionCookie(res: Response, value: string) {
