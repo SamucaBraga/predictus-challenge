@@ -1,7 +1,7 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
-import { Repository, LessThan, IsNull, Not } from 'typeorm';
+import { Repository } from 'typeorm';
 import { randomUUID } from 'node:crypto';
 import { Registration, RegistrationStatus, DocumentType } from './registration.entity';
 import { ExpiredResumeTokenException, IncompleteRegistrationDataException, InvalidResumeTokenException, MfaNotValidatedException, RegistrationAlreadyFinishedException, RegistrationNotFoundException, StepNotAllowedException } from '../../shared/exceptions/domain.exceptions';
@@ -57,6 +57,10 @@ export class RegistrationService {
     }
 
     return this.repo.save(existing);
+  }
+
+  async markMfaValidated(id: string): Promise<void> {
+    await this.repo.update({ id }, { mfa_validated_at: new Date(), current_step: 2 });
   }
 
   private computeTokenExpiry(): Date {

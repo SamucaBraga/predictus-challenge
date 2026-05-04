@@ -5,6 +5,7 @@ import { RegistrationService } from './registration.service';
 import { MfaModule } from '../mfa/mfa.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { AbandonmentDetectionService } from './abandonment-detection.service';
+import { RegistrationController } from './registration.controller';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { AbandonmentDetectionService } from './abandonment-detection.service';
     MfaModule,
     NotificationsModule,
   ],
+  controllers: [RegistrationController], 
   providers: [RegistrationService, AbandonmentDetectionService],
   exports: [RegistrationService],
 })
