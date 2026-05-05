@@ -1,11 +1,11 @@
 import type { ButtonHTMLAttributes } from 'react';
-import { type VariantProps, tv } from 'tailwind-variants';
+import { tv, type VariantProps } from 'tailwind-variants';
 import { cn } from '@/helpers/utils';
 import { LoadingSpinner } from './loading-spinner';
 
 const buttonVariants = tv({
   base: [
-    'inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium',
+    'inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium hover:cursor-pointer',
     'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
     'disabled:cursor-not-allowed disabled:opacity-60',
   ],

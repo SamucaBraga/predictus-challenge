@@ -15,23 +15,18 @@ type DocumentType = 'cpf' | 'cnpj';
 interface Props {
   initialDocumentType: DocumentType | null;
   initialDocumentNumber: string | null;
-  editFromReview: boolean;
 }
 
-export function FormDocument({
-  initialDocumentType,
-  initialDocumentNumber,
-  editFromReview,
-}: Props) {
+export function FormDocument({ initialDocumentType, initialDocumentNumber }: Props) {
   const router = useRouter();
   const [docType, setDocType] = useState<DocumentType>(initialDocumentType ?? 'cpf');
 
-  const [state, handleSubmit, isPending] = useFormState(submitDocument, () => {
-    router.push(editFromReview ? '/signup/review' : '/signup/contact');
+  const [state, formAction, isPending] = useFormState(submitDocument, () => {
+    router.push('/signup/contact');
   });
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form action={formAction} className="flex flex-col gap-4">
       <div className="flex gap-2">
         <TypeToggle active={docType === 'cpf'} onClick={() => setDocType('cpf')}>
           CPF
@@ -59,12 +54,10 @@ export function FormDocument({
         <FormField.Message error={state.errors?.document_number} />
       </FormField.Root>
 
-      {state.errors?._form && (
-        <p className="text-sm text-red-600">{state.errors._form[0]}</p>
-      )}
+      {state.errors?._form && <p className="text-sm text-red-600">{state.errors._form[0]}</p>}
 
       <Button type="submit" size="lg" disabled={isPending} loading={isPending}>
-        {editFromReview ? 'Salvar' : 'Continuar'}
+        Continuar
       </Button>
     </form>
   );

@@ -24,10 +24,9 @@ interface InitialAddress {
 
 interface Props {
   initial: InitialAddress;
-  editFromReview: boolean;
 }
 
-export function FormAddress({ initial, editFromReview }: Props) {
+export function FormAddress({ initial }: Props) {
   const router = useRouter();
 
   const [cepDigits, setCepDigits] = useState((initial.cep ?? '').replace(/\D/g, ''));
@@ -43,6 +42,7 @@ export function FormAddress({ initial, editFromReview }: Props) {
       setCepStatus('idle');
       return;
     }
+
     if (cepDigits === lastFetched.current) return;
 
     const handle = setTimeout(async () => {
@@ -63,7 +63,7 @@ export function FormAddress({ initial, editFromReview }: Props) {
     return () => clearTimeout(handle);
   }, [cepDigits]);
 
-  const [state, handleSubmit, isPending] = useFormState(submitAddress, () => {
+  const [state, formAction, isPending] = useFormState(submitAddress, () => {
     router.push('/signup/review');
   });
 
@@ -75,7 +75,7 @@ export function FormAddress({ initial, editFromReview }: Props) {
         : undefined;
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form action={formAction} className="flex flex-col gap-4">
       <FormField.Root>
         <FormField.Label htmlFor="cep">CEP</FormField.Label>
         <Input.Root error={!!state.errors?.cep}>
@@ -181,12 +181,10 @@ export function FormAddress({ initial, editFromReview }: Props) {
         </FormField.Root>
       </div>
 
-      {state.errors?._form && (
-        <p className="text-sm text-red-600">{state.errors._form[0]}</p>
-      )}
+      {state.errors?._form && <p className="text-sm text-red-600">{state.errors._form[0]}</p>}
 
       <Button type="submit" size="lg" disabled={isPending} loading={isPending}>
-        {editFromReview ? 'Salvar' : 'Revisar'}
+        Revisar
       </Button>
     </form>
   );

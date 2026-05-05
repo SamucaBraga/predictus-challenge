@@ -4,17 +4,17 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
-import { useFormState } from '@/lib/hooks/use-form-state';
 import { submitIdentification } from '@/lib/actions/registration';
+import { useFormState } from '@/lib/hooks/use-form-state';
 
 export function FormIdentification() {
   const router = useRouter();
-  const [state, handleSubmit, isPending] = useFormState(submitIdentification, () => {
+  const [state, formAction, isPending] = useFormState(submitIdentification, () => {
     router.push('/signup/verify');
   });
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form action={formAction} className="flex flex-col gap-4">
       <FormField.Root>
         <FormField.Label htmlFor="name">Nome completo</FormField.Label>
         <Input.Root error={!!state.errors?.name}>
@@ -45,9 +45,7 @@ export function FormIdentification() {
         <FormField.Message error={state.errors?.email} />
       </FormField.Root>
 
-      {state.errors?._form && (
-        <p className="text-sm text-red-600">{state.errors._form[0]}</p>
-      )}
+      {state.errors?._form && <p className="text-sm text-red-600">{state.errors._form[0]}</p>}
 
       <Button type="submit" size="lg" disabled={isPending} loading={isPending}>
         Continuar

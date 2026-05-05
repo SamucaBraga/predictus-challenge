@@ -50,12 +50,6 @@ export function MaskedInput({ mask, defaultValue = '', onValueChange, ...rest }:
   }
 
   return (
-    <Input.Control
-      type="tel"
-      inputMode="numeric"
-      value={value}
-      onChange={handleChange}
-      {...rest}
-    />
+    <Input.Control type="tel" inputMode="numeric" value={value} onChange={handleChange} {...rest} />
   );
 }

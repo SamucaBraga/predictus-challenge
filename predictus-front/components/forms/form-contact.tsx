@@ -10,17 +10,16 @@ import { useFormState } from '@/lib/hooks/use-form-state';
 
 interface Props {
   initialPhone: string | null;
-  editFromReview: boolean;
 }
 
-export function FormContact({ initialPhone, editFromReview }: Props) {
+export function FormContact({ initialPhone }: Props) {
   const router = useRouter();
-  const [state, handleSubmit, isPending] = useFormState(submitContact, () => {
-    router.push(editFromReview ? '/signup/review' : '/signup/address');
+  const [state, formAction, isPending] = useFormState(submitContact, () => {
+    router.push('/signup/address');
   });
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form action={formAction} className="flex flex-col gap-4">
       <FormField.Root>
         <FormField.Label htmlFor="phone">Celular</FormField.Label>
         <Input.Root error={!!state.errors?.phone}>
@@ -32,18 +31,13 @@ export function FormContact({ initialPhone, editFromReview }: Props) {
             autoFocus
           />
         </Input.Root>
-        <FormField.Message
-          error={state.errors?.phone}
-          hint="Apenas celulares (com 9 inicial)"
-        />
+        <FormField.Message error={state.errors?.phone} />
       </FormField.Root>
 
-      {state.errors?._form && (
-        <p className="text-sm text-red-600">{state.errors._form[0]}</p>
-      )}
+      {state.errors?._form && <p className="text-sm text-red-600">{state.errors._form[0]}</p>}
 
       <Button type="submit" size="lg" disabled={isPending} loading={isPending}>
-        {editFromReview ? 'Salvar' : 'Continuar'}
+        Continuar
       </Button>
     </form>
   );

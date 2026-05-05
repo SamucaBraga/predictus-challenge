@@ -1,4 +1,5 @@
 import 'server-only';
+
 import ky from 'ky';
 import { cookies } from 'next/headers';
 import { env } from '@/env';
@@ -25,7 +26,7 @@ export const backendApi = ky.create({
             request.headers.set('Cookie', `${COOKIE_NAME}=${token}`);
           }
         } catch (error) {
-          logger.error({ error }, 'Failed to attach session cookie to backend request');
+          logger.debug({ error }, 'No session cookie attached (rendering outside request scope)');
         }
       },
     ],

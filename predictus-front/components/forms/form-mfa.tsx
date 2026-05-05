@@ -13,7 +13,7 @@ export function FormMfa() {
   const [resendNotice, setResendNotice] = useState<string | null>(null);
   const [isResending, startResend] = useTransition();
 
-  const [state, handleSubmit, isPending] = useFormState(verifyMfa, () => {
+  const [state, formAction, isPending] = useFormState(verifyMfa, () => {
     router.push('/signup/document');
   });
 
@@ -26,7 +26,7 @@ export function FormMfa() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form action={formAction} className="flex flex-col gap-4">
       <FormField.Root>
         <FormField.Label htmlFor="code">Código de 6 dígitos</FormField.Label>
         <Input.Root error={!!state.errors?.code}>
@@ -45,9 +45,7 @@ export function FormMfa() {
         <FormField.Message error={state.errors?.code} />
       </FormField.Root>
 
-      {state.errors?._form && (
-        <p className="text-sm text-red-600">{state.errors._form[0]}</p>
-      )}
+      {state.errors?._form && <p className="text-sm text-red-600">{state.errors._form[0]}</p>}
       {resendNotice && <p className="text-sm text-gray-700">{resendNotice}</p>}
 
       <Button type="submit" size="lg" disabled={isPending} loading={isPending}>

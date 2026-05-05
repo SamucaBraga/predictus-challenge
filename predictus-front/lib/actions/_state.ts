@@ -2,10 +2,12 @@ import 'server-only';
 import { backendApi } from '@/lib/http/backend-api';
 import { logger } from '@/lib/logger';
 
+export type RegistrationStatus = 'in_progress' | 'finished' | 'abandoned';
+
 export interface RegistrationState {
   id: string;
   currentStep: number;
-  status: 'in_progress' | 'finished' | 'abandoned';
+  status: RegistrationStatus;
   mfaValidated: boolean;
   partialData: Record<string, string | null>;
 }
