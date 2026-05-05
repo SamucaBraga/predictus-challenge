@@ -35,7 +35,7 @@ describe('isValidMobileBr', () => {
       [undefined, 'undefined'],
       [11999999999, 'number'],
       [{}, 'objeto'],
-    ])('rejeita %s (%s)', (input) => {
+    ])('rejeita %s (%s)', (input, _description) => {
       expect(isValidMobileBr(input as never)).toBe(false);
     });
   });

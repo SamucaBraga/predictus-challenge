@@ -51,7 +51,7 @@ describe('RegistrationService.upsertIdentification', () => {
       status: RegistrationStatus.ABANDONED,
       recovery_email_sent_at: new Date(),
     });
-    const originalToken = existing.resume_token; // ← captura ANTES de mutar
+    const originalToken = existing.resume_token;  
     repo.findOne.mockResolvedValue(existing);
 
     const r = await service.upsertIdentification({ email: 'a@x.com', name: 'Ana' });
@@ -158,7 +158,7 @@ describe('RegistrationService.updateAddress', () => {
     });
 
     expect(result.current_step).toBe(5); // mantém — Math.max(5, 5)
-    expect(result.state).toBe('SP'); // upper-case
+    expect(result.state).toBe('SP');  
   });
 });
 
