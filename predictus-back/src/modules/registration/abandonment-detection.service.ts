@@ -2,8 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
-import { IsNull, LessThan, Not, Repository } from 'typeorm';
- import { NotificationsService } from '../notifications/notifications.service';
+import { IsNull, LessThan, MoreThanOrEqual, Repository } from 'typeorm';
+import { NotificationsService } from '../notifications/notifications.service';
 import { Registration, RegistrationStatus } from './registration.entity';
 
 @Injectable()
@@ -23,10 +23,10 @@ export class AbandonmentDetectionService {
 
     const candidates = await this.repo.find({
       where: {
-        status: RegistrationStatus.IN_PROGRESS, 
-        mfa_validated_at: Not(IsNull()),
+        status: RegistrationStatus.IN_PROGRESS,
+        current_step: MoreThanOrEqual(2),
         updated_at: LessThan(cutoff),
-        recovery_email_sent_at: IsNull(), //not include who have already received an email to avoid spamming
+        recovery_email_sent_at: IsNull(), // skip those who have already received an email to avoid spamming
       },
     });
 

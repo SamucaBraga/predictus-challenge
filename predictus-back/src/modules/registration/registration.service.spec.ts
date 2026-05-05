@@ -100,9 +100,9 @@ describe('RegistrationService.updateDocument', () => {
     ({ service, repo } = await buildService());
   });
 
-  it('falha quando MFA não foi validado', async () => {
+  it('falha quando MFA não foi validado (current_step ainda em 1)', async () => {
     repo.findOne.mockResolvedValue(
-      mockReg({ id: 'r1', mfa_validated_at: null, current_step: 2 }),
+      mockReg({ id: 'r1', current_step: 1 }),
     );
 
     await expect(
@@ -117,7 +117,7 @@ describe('RegistrationService.updateDocument', () => {
 
   it('avança current_step de 2 para 3 ao salvar documento', async () => {
     repo.findOne.mockResolvedValue(
-      mockReg({ id: 'r1', mfa_validated_at: new Date(), current_step: 2 }),
+      mockReg({ id: 'r1', current_step: 2 }),
     );
 
     const result = await service.updateDocument('r1', {
@@ -144,7 +144,6 @@ describe('RegistrationService.updateAddress', () => {
     repo.findOne.mockResolvedValue(
       mockReg({
         id: 'r1',
-        mfa_validated_at: new Date(),
         current_step: 5, // usuário voltou da revisão pra editar endereço
       }),
     );
@@ -173,7 +172,7 @@ describe('RegistrationService.finish', () => {
 
   it('falha quando current_step < 5', async () => {
     repo.findOne.mockResolvedValue(
-      mockReg({ id: 'r1', mfa_validated_at: new Date(), current_step: 4, cep: '01310100' }),
+      mockReg({ id: 'r1', current_step: 4, cep: '01310100' }),
     );
 
     await expect(service.finish('r1')).rejects.toBeInstanceOf(StepNotAllowedException);
@@ -184,7 +183,6 @@ describe('RegistrationService.finish', () => {
     repo.findOne.mockResolvedValue(
       mockReg({
         id: 'r1',
-        mfa_validated_at: new Date(),
         current_step: 5,
         cep: '01310100',
       }),
@@ -269,7 +267,6 @@ describe('RegistrationService.reactivateAbandoned', () => {
       id: 'r1',
       status: RegistrationStatus.ABANDONED,
       recovery_email_sent_at: new Date(),
-      mfa_validated_at: new Date(),
       current_step: 2,
     });
     repo.findOne.mockResolvedValue(reg);
@@ -295,7 +292,9 @@ function mockReg(overrides: Partial<Registration>): Registration {
     resume_token: 'tok',
     resume_token_expires_at: new Date(Date.now() + 86400000),
     recovery_email_sent_at: null,
-    mfa_validated_at: null,
+    mfa_code_hash: null,
+    mfa_code_expires_at: null,
+    mfa_code_attempts: 0,
     created_at: new Date(),
     updated_at: new Date(),
     finished_at: null,

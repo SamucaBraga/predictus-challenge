@@ -5,10 +5,8 @@ import {
   Index,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
-  OneToMany,
 } from 'typeorm';
-import { MfaCode } from '../mfa/mfa-code.entity';
- 
+
 export enum RegistrationStatus {
   IN_PROGRESS = 'in_progress',
   FINISHED = 'finished',
@@ -69,8 +67,14 @@ export class Registration {
   @Column({ type: 'smallint', default: 1 })
   current_step!: number;
 
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  mfa_code_hash!: string | null;
+
   @Column({ type: 'timestamptz', nullable: true })
-  mfa_validated_at!: Date | null;
+  mfa_code_expires_at!: Date | null;
+
+  @Column({ type: 'smallint', default: 0 })
+  mfa_code_attempts!: number;
 
   @Column({ type: 'uuid', unique: true })
   resume_token!: string;
@@ -89,7 +93,4 @@ export class Registration {
 
   @Column({ type: 'timestamptz', nullable: true })
   finished_at!: Date | null;
-
-  @OneToMany(() => MfaCode, (code) => code.registration)
-  mfaCodes!: MfaCode[];
 }

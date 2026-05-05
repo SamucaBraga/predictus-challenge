@@ -2,9 +2,20 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomInt, randomUUID } from 'node:crypto';
 import { Registration, RegistrationStatus, DocumentType } from './registration.entity';
-import { ExpiredResumeTokenException, IncompleteRegistrationDataException, InvalidResumeTokenException, MfaNotValidatedException, RegistrationAlreadyFinishedException, RegistrationNotFoundException, StepNotAllowedException } from '../../shared/exceptions/domain.exceptions';
+import {
+  ExpiredResumeTokenException,
+  IncompleteRegistrationDataException,
+  InvalidResumeTokenException,
+  MfaExpiredException,
+  MfaInvalidCodeException,
+  MfaNotValidatedException,
+  MfaTooManyAttemptsException,
+  RegistrationAlreadyFinishedException,
+  RegistrationNotFoundException,
+  StepNotAllowedException,
+} from '../../shared/exceptions/domain.exceptions';
 
 export interface UpsertIdentificationInput {
   email: string;
@@ -59,8 +70,44 @@ export class RegistrationService {
     return this.repo.save(existing);
   }
 
-  async markMfaValidated(id: string): Promise<void> {
-    await this.repo.update({ id }, { mfa_validated_at: new Date(), current_step: 2 });
+  async generateMfa(reg: Registration): Promise<string> {
+    const code = randomInt(0, 1_000_000).toString().padStart(6, '0');
+    const ttlMin = this.config.get<number>('MFA_CODE_TTL_MINUTES')!;
+    reg.mfa_code_hash = this.hashCode(code);
+    reg.mfa_code_expires_at = new Date(Date.now() + ttlMin * 60_000);
+    reg.mfa_code_attempts = 0;
+    await this.repo.save(reg);
+    return code;
+  }
+
+  // Update current step to 2 if MFA is validated, and clear MFA code fields
+  async verifyMfa(reg: Registration, code: string): Promise<void> {
+    const max = this.config.get<number>('MFA_MAX_ATTEMPTS')!;
+    if (!reg.mfa_code_hash || !reg.mfa_code_expires_at) throw new MfaExpiredException();
+    if (reg.mfa_code_expires_at < new Date()) throw new MfaExpiredException();
+    if (reg.mfa_code_attempts >= max) throw new MfaTooManyAttemptsException();
+
+    if (reg.mfa_code_hash !== this.hashCode(code)) {
+      reg.mfa_code_attempts += 1;
+      await this.repo.save(reg);
+      const left = max - reg.mfa_code_attempts;
+      if (left <= 0) {
+        reg.mfa_code_hash = null;
+        reg.mfa_code_expires_at = null;
+        await this.repo.save(reg);
+        throw new MfaTooManyAttemptsException();
+      }
+      throw new MfaInvalidCodeException(left);
+    }
+
+    reg.mfa_code_hash = null;
+    reg.mfa_code_expires_at = null;
+    reg.current_step = Math.max(reg.current_step, 2);
+    await this.repo.save(reg);
+  }
+
+  private hashCode(code: string): string {
+    return createHash('sha256').update(code).digest('hex');
   }
 
   private computeTokenExpiry(): Date {
@@ -120,7 +167,7 @@ export class RegistrationService {
       id: reg.id,
       currentStep: reg.current_step,
       status: reg.status,
-      mfaValidated: !!reg.mfa_validated_at,
+      mfaValidated: reg.current_step >= 2,
       partialData: this.serializePartial(reg),
     };
   }
@@ -158,7 +205,7 @@ export class RegistrationService {
   }
 
   private assertMfaValidated(reg: Registration) {
-    if (!reg.mfa_validated_at) throw new MfaNotValidatedException();
+    if (reg.current_step < 2) throw new MfaNotValidatedException();
   }
 
   private assertCanWriteStep(reg: Registration, requestedStep: number) {

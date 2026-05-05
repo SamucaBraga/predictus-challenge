@@ -3,7 +3,6 @@ import { Body, Controller, Get, HttpCode, Post, Query, Res, UseGuards } from '@n
 import { Throttle } from '@nestjs/throttler';
 import { type Response } from 'express';
 import { RegistrationService } from './registration.service';
-import { MfaService } from '../mfa/mfa.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { IdentificationDto } from './dto/identification.dto';
 import { VerifyMfaDto } from './dto/verify-mfa.dto';
@@ -24,7 +23,6 @@ export class RegistrationController {
 
   constructor(
     private readonly registration: RegistrationService,
-    private readonly mfa: MfaService,
     private readonly notifications: NotificationsService,
     config: ConfigService
   ) {
@@ -37,8 +35,8 @@ export class RegistrationController {
   @HttpCode(200)
   async identification(@Body() dto: IdentificationDto, @Res({ passthrough: true }) res: Response) {
     const reg = await this.registration.upsertIdentification(dto);
-    const { plaintextCode } = await this.mfa.generate(reg.id);
-    await this.notifications.sendMfaCode(reg.email, plaintextCode);
+    const code = await this.registration.generateMfa(reg);
+    await this.notifications.sendMfaCode(reg.email, code);
     this.setSessionCookie(res, reg.resume_token);
     return { requiresMfa: true };
   }
@@ -47,8 +45,7 @@ export class RegistrationController {
   @Post('mfa/verify')
   @HttpCode(200)
   async verifyMfa(@CurrentRegistration() reg: Registration, @Body() dto: VerifyMfaDto) {
-    await this.mfa.validate(reg.id, dto.code);
-    await this.registration.markMfaValidated(reg.id);
+    await this.registration.verifyMfa(reg, dto.code);
     return { success: true };
   }
 
@@ -57,8 +54,8 @@ export class RegistrationController {
   @Post('mfa/resend')
   @HttpCode(200)
   async resendMfa(@CurrentRegistration() reg: Registration) {
-    const { plaintextCode } = await this.mfa.resend(reg.id);
-    await this.notifications.sendMfaCode(reg.email, plaintextCode);
+    const code = await this.registration.generateMfa(reg);
+    await this.notifications.sendMfaCode(reg.email, code);
     return { sent: true };
   }
 

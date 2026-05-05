@@ -52,7 +52,9 @@ function mockReg(overrides: Partial<Registration> = {}): Registration {
     name: 'Ana',
     status: RegistrationStatus.IN_PROGRESS,
     current_step: 3,
-    mfa_validated_at: new Date(Date.now() - 10 * 60_000),
+    mfa_code_hash: null,
+    mfa_code_expires_at: null,
+    mfa_code_attempts: 0,
     resume_token: 'tok',
     resume_token_expires_at: new Date(Date.now() + 86_400_000),
     recovery_email_sent_at: null,
@@ -143,7 +145,7 @@ describe('AbandonmentDetectionService.detectAbandonments', () => {
     expect(repo.save).toHaveBeenCalledWith(reg);
   });
 
-  it('query filtra por status, mfa_validated_at não-nulo, updated_at antigo e recovery_email_sent_at nulo', async () => {
+  it('query filtra por status, current_step >= 2, updated_at antigo e recovery_email_sent_at nulo', async () => {
     repo.find.mockResolvedValue([]);
 
     await service.detectAbandonments();
@@ -152,7 +154,7 @@ describe('AbandonmentDetectionService.detectAbandonments', () => {
       expect.objectContaining({
         where: expect.objectContaining({
           status: RegistrationStatus.IN_PROGRESS,
-          mfa_validated_at: expect.anything(),
+          current_step: expect.anything(),
           updated_at: expect.anything(),
           recovery_email_sent_at: expect.anything(),
         }),
